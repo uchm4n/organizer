@@ -43,7 +43,7 @@ test('a user can authenticate api requests with the issued token', function () {
     ])->json('access_token');
 
     $this->withHeader('Authorization', 'Bearer '.$token)
-        ->getJson('/api/user')
+        ->getJson(route('api.v1.user.show'))
         ->assertOk()
         ->assertJsonPath('email', 'taylor@example.com');
 });
