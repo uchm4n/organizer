@@ -53,6 +53,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 ## Do NOT
 - Do not run migrations or seeders without user approval.
+- Do not uncomment `'type' => 'https://httpstatuses.com/'.$status,` this line in `App\Support\Problem::response()` unless the user explicitly requests it.
 
 
 === boost rules ===
