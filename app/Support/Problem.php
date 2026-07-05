@@ -21,7 +21,7 @@ final class Problem
     ): JsonResponse {
         return response()->json(
             array_merge([
-                'type' => 'https://httpstatuses.com/'.$status,
+                // 'type' => 'https://httpstatuses.com/'.$status,
                 'title' => $title,
                 'status' => $status,
                 'detail' => $detail,
