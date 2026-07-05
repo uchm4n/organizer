@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ApiVersion;
 use App\Http\Middleware\HttpSunset;
 use App\Support\Problem;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -24,6 +25,14 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'sunset' => HttpSunset::class,
+        ]);
+
+        // Every API request declares its version via the X-API-Version header
+        // (defaulting to the current major). Doing this in the `api` group
+        // rather than per-route ensures version validation runs before any
+        // authentication middleware, so a bad version is a 400 not a 401.
+        $middleware->api(prepend: [
+            ApiVersion::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

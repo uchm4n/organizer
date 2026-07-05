@@ -10,7 +10,7 @@ test('a user can login and receive an api token', function () {
         'password' => Hash::make('secret-password'),
     ]);
 
-    $response = $this->postJson(route('api.login'), [
+    $response = $this->postJson(route('api.v1.auth.login'), [
         'email' => 'taylor@example.com',
         'password' => 'secret-password',
     ]);
@@ -37,7 +37,7 @@ test('a user can authenticate api requests with the issued token', function () {
         'password' => Hash::make('secret-password'),
     ]);
 
-    $token = $this->postJson(route('api.login'), [
+    $token = $this->postJson(route('api.v1.auth.login'), [
         'email' => 'taylor@example.com',
         'password' => 'secret-password',
     ])->json('access_token');
@@ -54,7 +54,7 @@ test('login rejects invalid credentials', function () {
         'password' => Hash::make('secret-password'),
     ]);
 
-    $this->postJson(route('api.login'), [
+    $this->postJson(route('api.v1.auth.login'), [
         'email' => 'taylor@example.com',
         'password' => 'wrong-password',
     ])
@@ -65,7 +65,7 @@ test('login rejects invalid credentials', function () {
 });
 
 test('login requires credentials', function () {
-    $this->postJson(route('api.login'))
+    $this->postJson(route('api.v1.auth.login'))
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['email', 'password']);
 });

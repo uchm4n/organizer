@@ -162,4 +162,95 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Run tests: `php artisan test --compact` or filter: `php artisan test --compact --filter=testName`.
 - Do NOT delete tests without approval.
 
+=== project conventions ===
+
+# Architecture Conventions
+
+## Directory Structure (Domain-Sliced Classic Laravel)
+
+The application follows the **domain-sliced classic Laravel** layout. Domain folders appear consistently at every layer; cross-cutting concerns stay flat in their conventional Laravel directories.
+
+```
+app/
+├── Actions/                     # Domain use cases (HTTP-agnostic). Sliced by domain.
+│   ├── Auth/LoginUserAction.php
+│   ├── User/UpdateUserProfileAction.php
+│   └── Billing/CreateSubscriptionAction.php
+├── Data/                        # spatie/laravel-data DTOs (API-facing). Sliced by domain.
+│   ├── Auth/
+│   ├── User/UserData.php
+│   └── Billing/
+├── Http/
+│   ├── Controllers/Api/         # Invokable, one action per class. Sliced by domain.
+│   │   ├── Auth/LoginController.php
+│   │   ├── User/UserShowController.php
+│   │   └── Billing/...
+│   ├── Requests/                # FormRequest validation. Sliced by domain.
+│   │   ├── Auth/LoginRequest.php
+│   │   └── User/UpdateUserRequest.php
+│   └── Middleware/             # HTTP middleware. Flat (cross-cutting).
+├── Models/                     # Eloquent models. Flat (cross-cutting).
+├── Policies/, Events/, Listeners/, Jobs/, ...  # other Laravel-default dirs; slice by domain inside each
+└── Support/                    # Cross-cutting utilities (Problem, helpers, value-object bases).
+                                 # Never put domain logic here.
+```
+
+Rules:
+- One folder per **bounded domain** (Auth, User, Billing, Subscription, Invoice…), not per HTTP resource.
+- If two domains share 80% of types they are probably one domain. If a domain has more than ~12 controllers it is likely two domains.
+- Never version-slice folders. API versioning is expressed via the `X-API-Version` header (see below), not via `V1/` directories.
+
+## Naming Conventions
+
+| Layer | Pattern | Examples |
+|---|---|---|
+| Controller (invokable) | `{Entity}{Action}Controller` | `UserShowController`, `UserUpdateController`, `SubscriptionCreateController` |
+| Action | `{Verb}{Entity}Action` | `LoginUserAction`, `UpdateUserProfileAction`, `CreateSubscriptionAction` |
+| Request | `{Entity}{Action}Request` | `LoginRequest`, `UserUpdateRequest`, `SubscriptionCreateRequest` |
+| Data | `{Entity}Data` (single), `{Entity}Collection` (list), `Paginated{Entity}Data` (paginated) | `UserData`, `UserCollection` |
+| Middleware | `{Concern}Middleware` OR descriptive noun (`ApiVersion`, `HttpSunset`, `EnsureTokenIsValid`) | — |
+
+Controllers are always invokable (`__invoke`), one class per HTTP endpoint.
+
+## Action vs. Controller — when to use which
+
+Controllers and Actions are NOT the same. A controller is an HTTP adapter; an action is a domain use case.
+
+- **Controller** is bound to the HTTP request. Its job: receive a validated `FormRequest`, hand clean primitives / DTOs / domain objects to the action, and format the HTTP-shaped response (or return a Data object).
+- **Action** is HTTP-agnostic. It accepts primitives/DTOs, performs the business use case (persistence, side effects, transactions, domain rules), and returns domain objects (`NewAccessToken`, `User`, `bool`, `void`). Actions MUST be reuseable across controllers, jobs, commands, listeners, and other actions without modification.
+
+Create an Action when **any** of the following are true:
+1. The use case is invoked from a non-HTTP source (job, command, listener, another action, test helper).
+2. The logic mutates state, has side effects, opens a transaction, or enforces domain rules — beyond "fetch row → transform".
+3. The controller would otherwise have more than ~5–7 lines of orchestration that isn't pure request/response plumbing.
+
+Otherwise: put the one-liner directly in the controller. No action class. (Example: `UserShowController` has no action — `UserData::fromModel($request->user())` lives in the controller.)
+
+## API Error Responses (RFC 9457 Problem+JSON)
+
+All error responses — across web and API routes — return RFC 9457 Problem+JSON documents, never HTML.
+
+- Helpers: `App\Support\Problem::response(int $status, string $title, string $detail, array $extra = []): JsonResponse` and `App\Support\Problem::titleForStatus(int $status): string`.
+- Every error response has `Content-Type: application/problem+json` and the body shape `{type,title,status,detail,*}` where `type` is `https://httpstatuses.com/{status}`.
+- Exception → Problem mapping lives in `bootstrap/app.php` `->withExceptions()` and is registered in this order (Laravel uses the first match): `ValidationException` → 422, `AuthenticationException` → 401, `AuthorizationException` → 403, `ModelNotFoundException` → 404, `NotFoundHttpException` → 404, `HttpException` (dynamic), then `Throwable` catch-all.
+- In non-production environments, the `Throwable` catch-all exposes `exception`, `file`, `line` extension members for debugging. In production, it returns only a generic `"An unexpected error occurred. Please try again later."` — internal details never leak.
+
+## API Versioning (Header-Based)
+
+API versions are NOT expressed in URLs. The version is selected via the `X-API-Version` request header.
+
+- Middleware: `App\Http\Middleware\ApiVersion`, prepended to the `api` middleware group in `bootstrap/app.php`, so it runs before any authentication middleware.
+- Default: when `X-API-Version` is omitted, the highest version in `ApiVersion::SUPPORTED` is used. Today that is `1`.
+- Unsupported / non-numeric versions return a `400 Problem+Json` with the supported version list.
+- Route names keep the `v1` segment as an internal unique key (`api.v1.user.show`); this is invisible to clients and future-proofs against route name collisions when v2 ships.
+- When v2 needs to ship: split `routes/api.php` into `routes/api/v1.php` and `routes/api/v2.php`, load both under an internal prefix, and let `ApiVersion` middleware resolve which controller handles the matched URI based on the header.
+
+## Sanctum Token Expiration
+
+- Global token expiration (minutes) is configured in `config/sanctum.php` via the `expiration` option. Set to `1440` (1 day).
+- `$user->createToken($name)` (no third arg) inherits the global expiration. Passing a third arg overrides it — avoid unless intentional.
+- On login, prior tokens for the user are revoked: `$user->tokens()->delete()` before `createToken(...)`.
+- Expired tokens return `401 Problem+Json` (no auto-refresh; the client must re-authenticate).
+- Scheduled cleanup of expired rows: `Schedule::command('sanctum:prune-expired --hours=24')->daily();` (optional, add when needed).
+
 </laravel-boost-guidelines>

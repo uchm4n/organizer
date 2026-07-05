@@ -215,7 +215,7 @@ final class UserData extends Data
 The canonical exemplar in this repo is `/api/v1/user`.
 
 - Route name: `api.v1.user.show`
-- Controller: `App\Http\Controllers\Api\V1\CurrentUserController`
+- Controller: `App\Http\Controllers\Api\User\CurrentUserController`
 - Response DTO: `App\Data\Api\UserData`
 
 This endpoint shows the preferred read pattern for simple authenticated resources:

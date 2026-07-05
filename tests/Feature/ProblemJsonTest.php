@@ -11,7 +11,7 @@ beforeEach(function () {
 });
 
 test('validation failures are returned as problem+json', function () {
-    $this->postJson(route('api.login'))
+    $this->postJson(route('api.v1.auth.login'))
         ->assertUnprocessable()
         ->assertHeader('Content-Type', 'application/problem+json')
         ->assertJsonPath('type', 'https://httpstatuses.com/422')
@@ -82,4 +82,60 @@ test('generic exceptions become a 500 problem document with a generic message in
         ->assertJsonPath('status', 500)
         ->assertJsonPath('detail', 'An unexpected error occurred. Please try again later.')
         ->assertJsonMissingPath('exception');
+});
+
+test('requests without an api version header default to the current version', function () {
+    User::factory()->create([
+        'email' => 'taylor@example.com',
+        'password' => Hash::make('secret-password'),
+    ]);
+
+    $token = $this->postJson(route('api.v1.auth.login'), [
+        'email' => 'taylor@example.com',
+        'password' => 'secret-password',
+    ])->json('access_token');
+
+    $this->withHeader('Authorization', 'Bearer '.$token)
+        ->getJson(route('api.v1.user.show'))
+        ->assertOk()
+        ->assertJsonPath('data.email', 'taylor@example.com');
+});
+
+test('requests with a supported api version header are accepted', function () {
+    User::factory()->create([
+        'email' => 'taylor@example.com',
+        'password' => Hash::make('secret-password'),
+    ]);
+
+    $token = $this->withHeader('X-API-Version', '1')
+        ->postJson(route('api.v1.auth.login'), [
+            'email' => 'taylor@example.com',
+            'password' => 'secret-password',
+        ])->json('access_token');
+
+    $this->withHeaders([
+        'Authorization' => 'Bearer '.$token,
+        'X-API-Version' => '1',
+    ])
+        ->getJson(route('api.v1.user.show'))
+        ->assertOk();
+});
+
+test('requests with an unsupported api version are rejected with a 400 problem document', function () {
+    $this->withHeader('X-API-Version', '99')
+        ->getJson(route('api.v1.user.show'))
+        ->assertBadRequest()
+        ->assertHeader('Content-Type', 'application/problem+json')
+        ->assertJsonPath('type', 'https://httpstatuses.com/400')
+        ->assertJsonPath('title', 'Bad Request')
+        ->assertJsonPath('status', 400)
+        ->assertJsonPath('supported.0', 1);
+});
+
+test('requests with a non-numeric api version are rejected', function () {
+    $this->withHeader('X-API-Version', 'banana')
+        ->getJson(route('api.v1.user.show'))
+        ->assertBadRequest()
+        ->assertJsonPath('status', 400)
+        ->assertJsonPath('title', 'Bad Request');
 });
