@@ -21,6 +21,9 @@ class LoginUserAction
             ]);
         }
 
-        return $user->createToken(self::TokenName);
+        // Delete old tokens if any, prevent failure login token buildup
+        $user->tokens()->delete();
+
+        return $user->createToken(self::TokenName, expiresAt: now()->addMinutes(config('sanctum.expiration')));
     }
 }
