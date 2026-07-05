@@ -52,6 +52,7 @@ final class Problem
             413 => 'Content Too Large',
             415 => 'Unsupported Media Type',
             422 => 'Unprocessable Entity',
+            426 => 'Upgrade Required',
             429 => 'Too Many Requests',
             451 => 'Unavailable For Legal Reasons',
             500 => 'Internal Server Error',

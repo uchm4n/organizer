@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\ApiVersion;
 use App\Http\Middleware\HttpSunset;
+use App\Http\Middleware\RequireApiVersion;
 use App\Support\Problem;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'sunset' => HttpSunset::class,
+            'version' => RequireApiVersion::class,
         ]);
 
         // Every API request declares its version via the X-API-Version header
