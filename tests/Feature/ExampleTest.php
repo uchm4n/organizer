@@ -1,7 +1,9 @@
 <?php
 
-test('returns a successful response', function () {
-    $response = $this->get(route('home'));
-
-    $response->assertOk();
+test('the welcome page is rendered as a plain blade api landing page', function () {
+    $this->get(route('home'))
+        ->assertSuccessful()
+        ->assertSee(config('app.name'))
+        ->assertSee('stateless JSON API')
+        ->assertDontSee('data-page', false);
 });
