@@ -51,6 +51,10 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 - Be concise in your explanations - focus on what's important rather than explaining obvious details.
 
+## Do NOT
+- Do not run migrations or seeders without user approval.
+
+
 === boost rules ===
 
 # Laravel Boost

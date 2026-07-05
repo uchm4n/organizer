@@ -1,9 +1,6 @@
 {
     "agents": [
-        "junie",
-        "claude_code",
         "opencode",
-        "zed"
     ],
     "cloud": false,
     "guidelines": true,
@@ -12,6 +9,8 @@
     "sail": false,
     "skills": [
         "laravel-best-practices",
+        "laravel-data-api-first",
+        "laravel-patterns",
         "pest-testing"
     ]
 }
