@@ -15,12 +15,12 @@ test('an authenticated user can fetch their current api user payload', function 
     $this->getJson(route('api.v1.user.show'))
         ->assertOk()
         ->assertJson(fn (AssertableJson $json) => $json
-            ->where('id', $user->getKey())
-            ->where('name', 'Taylor Otwell')
-            ->where('email', 'taylor@example.com')
-            ->where('email_verified_at', $user->email_verified_at?->format(DATE_ATOM))
-            ->where('created_at', $user->created_at?->format(DATE_ATOM))
-            ->where('updated_at', $user->updated_at?->format(DATE_ATOM))
+            ->where('data.id', $user->getKey())
+            ->where('data.name', 'Taylor Otwell')
+            ->where('data.email', 'taylor@example.com')
+            ->where('data.email_verified_at', $user->email_verified_at?->format(DATE_ATOM))
+            ->where('data.created_at', $user->created_at?->format(DATE_ATOM))
+            ->where('data.updated_at', $user->updated_at?->format(DATE_ATOM))
             ->missing('password')
             ->missing('remember_token')
         );

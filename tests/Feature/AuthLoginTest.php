@@ -45,7 +45,7 @@ test('a user can authenticate api requests with the issued token', function () {
     $this->withHeader('Authorization', 'Bearer '.$token)
         ->getJson(route('api.v1.user.show'))
         ->assertOk()
-        ->assertJsonPath('email', 'taylor@example.com');
+        ->assertJsonPath('data.email', 'taylor@example.com');
 });
 
 test('login rejects invalid credentials', function () {
