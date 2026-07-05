@@ -1,5 +1,6 @@
 <?php
 
+use App\Logging\SlimLineFormatter;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -58,19 +59,26 @@ return [
             'ignore_exceptions' => false,
         ],
 
+        // Slim one-line log channel. The SlimLineFormatter tap replaces the
+        // default multi-line Monolog output (with stack traces) by a single
+        // scannable line: status (for exceptions), exception class, file:line,
+        // request context array, trace_id. Stack traces are NOT written to
+        // disk — use Pail / Telescope in dev for rich trace inspection.
         'single' => [
             'driver' => 'single',
-            'path' => storage_path('logs/laravel.log'),
+            'path' => storage_path('logs/organizer.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'replace_placeholders' => true,
+            'tap' => [SlimLineFormatter::class],
         ],
 
         'daily' => [
             'driver' => 'daily',
-            'path' => storage_path('logs/laravel.log'),
+            'path' => storage_path('logs/organizer.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => env('LOG_DAILY_DAYS', 14),
             'replace_placeholders' => true,
+            'tap' => [SlimLineFormatter::class],
         ],
 
         'slack' => [
@@ -124,7 +132,7 @@ return [
         ],
 
         'emergency' => [
-            'path' => storage_path('logs/laravel.log'),
+            'path' => storage_path('logs/organizer.log'),
         ],
 
     ],

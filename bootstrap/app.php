@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Middleware\ApiVersion;
+use App\Http\Middleware\AssignTraceId;
 use App\Http\Middleware\HttpSunset;
 use App\Http\Middleware\RequireApiVersion;
+use App\Support\ExceptionLogger;
 use App\Support\Problem;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -29,12 +31,15 @@ return Application::configure(basePath: dirname(__DIR__))
             'version' => RequireApiVersion::class,
         ]);
 
-        // Every API request declares its version via the X-API-Version header
-        // (defaulting to the current major). Doing this in the `api` group
-        // rather than per-route ensures version validation runs before any
-        // authentication middleware, so a bad version is a 400 not a 401.
+        // Every API request gets a trace_id and declares its version via the
+        // X-API-Version header (defaulting to the current major). Doing this
+        // in the `api` group rather than per-route ensures both run before
+        // any authentication middleware: a bad version is a 400 not a 401,
+        // and the trace_id is available even to error log entries produced
+        // by auth failures.
         $middleware->api(prepend: [
             ApiVersion::class,
+            AssignTraceId::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -42,6 +47,59 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
 
+        // Suppress duplicate log entries when the same exception is reported
+        // more than once (e.g. via `report()` from a listener or job).
+        $exceptions->dontReportDuplicates();
+
+        // Laravel's exception handler silently skips a list of "internal"
+        // exception types from ever being reported (ValidationException,
+        // AuthorizationException, AuthenticationException,
+        // ModelNotFoundException, etc.). We want our tiered logger to see
+        // the abuse-signal types (403, 422), so we opt them back in. The
+        // tiers we keep silent (401, 404) are silently dropped in our
+        // report callback before any log line is written.
+        $exceptions->stopIgnoring([
+            AuthorizationException::class,
+            // ValidationException::class,
+        ]);
+
+        // ---------------- Exception logging ----------------
+        // Routing by exception tier. The render callbacks below still handle
+        // the HTTP response shape — these report callbacks decide whether
+        // the error is logged, and at what level, via ExceptionLogger which
+        // writes a single slim line per error (no stack trace dumped to disk).
+        //
+        // Logging tiers:
+        //   - server errors (5xx + non-HTTP Throwables) -> error, always
+        //   - client abuse signals (403, 422 validation) -> warning, always
+        //   - client noise (401, 404) -> silent by default (Laravel already
+        //     ignores NotFoundHttpException; we extend the same silence to
+        //     AuthenticationException / ModelNotFoundException).
+        $exceptions->report(function (Throwable $e) {
+            if (ExceptionLogger::isClientNoise($e)) {
+                return false; // silent — never logged
+            }
+
+            $status = ExceptionLogger::httpStatus($e);
+
+            if ($status >= 500) {
+                ExceptionLogger::serverError($e);
+
+                return false; // we've already written; don't double-log
+            }
+
+            // 403 Forbidden and 422 Unprocessable Entity are potential API
+            // misuse / brute-force / probing signals — log at warning.
+            if (in_array($status, [403, 422], true)) {
+                ExceptionLogger::clientWarning($e, $status);
+
+                return false;
+            }
+
+            return null; // fall through to Laravel's default logging
+        });
+
+        // ---------------- Exception rendering ----------------
         // registration order matters; Laravel uses the first matching callback.
 
         $exceptions->render(function (ValidationException $e) {
@@ -112,6 +170,7 @@ return Application::configure(basePath: dirname(__DIR__))
                         'exception' => $e::class,
                         'file' => $e->getFile(),
                         'line' => $e->getLine(),
+                        'trace_id' => app()->bound('app.trace_id') ? app('app.trace_id') : null,
                     ],
                 );
             }
@@ -122,6 +181,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 detail: $status === 500
                     ? 'An unexpected error occurred. Please try again later.'
                     : $title,
+                extra: app()->bound('app.trace_id') ? ['trace_id' => app('app.trace_id')] : [],
             );
         });
     })->create();

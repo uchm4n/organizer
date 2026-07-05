@@ -258,4 +258,23 @@ API versions are NOT expressed in URLs. The version is selected via the `X-API-V
 - Expired tokens return `401 Problem+Json` (no auto-refresh; the client must re-authenticate).
 - Scheduled cleanup of expired rows: `Schedule::command('sanctum:prune-expired --hours=24')->daily();` (optional, add when needed).
 
+## Exception Logging
+
+Logs are slim, single-line, scannable. Stack traces are NEVER written to disk. Use Pail / Telescope in dev for trace inspection. All log files are named `organizer.log` (named after the project), not `laravel.log`.
+
+- **Format**: `[%datetime%] %channel%.%level_name%: %message% %context%`
+  - Example: `[2026-07-06 12:34:56] api.ERROR: 500 InternalServerError RuntimeException "boom" at app/X.php:42 | route=... user=42 method=GET url=/x ip=127.0.0.1 trace_id=4f3a2b`
+  - The actual log line uses structured `$context` (JSON object after the message), not pipe-separated inline values; the message itself contains status, title, exception class, message, and file:line only.
+- **Formatter**: `app/Logging/SlimLineFormatter.php` — wired via `tap` on every channel in `config/logging.php` (`single`, `daily`). Customizes the Monolog `LineFormatter` with `setBasePath` (relative file paths) and `ignoreEmptyContextAndExtra`.
+- **Writer**: `app/Support/ExceptionLogger.php` — single class responsible for writing log lines. Routes by status code.
+- **Tier policy** (registered as `$exceptions->report(...)` callbacks in `bootstrap/app.php`):
+  1. **5xx + non-HTTP Throwables** → `Log::error(...)`, always
+  2. **403 Forbidden / 422 Unprocessable** → `Log::warning(...)`, always (API misuse / brute-force / probing signals)
+  3. **401 Unauthorized / 404 NotFound / ModelNotFound / HttpResponseException** → silent by default
+  4. Other 4xx → `Log::info(...)`, fall through to Laravel's default
+- **Laravel `$internalDontReport` opt-outs**: `AuthorizationException` and `ValidationException` are in Laravel's internal skip-list and would never reach `report` callbacks by default. We opt them back in via `$exceptions->stopIgnoring([AuthorizationException::class, ValidationException::class])`.
+- **Dedupe**: `$exceptions->dontReportDuplicates()` prevents the same exception instance from being logged multiple times when re-reported.
+- **Trace ID**: `app/Http/Middleware/AssignTraceId.php` runs in the `api` middleware group, before auth. Generates 8 hex chars per request (or accepts a client `X-Trace-Id` header), stored on `app.trace_id` container binding and exposed back to the client via `X-Trace-Id` response header. Included in every log line's `$context` AND in the production Problem+JSON body (so a client-reporting an error can share the ID and support can correlate to a single server-side log line).
+- **Do NOT** add stack traces to log lines under any circumstance. If you need trace inspection, use Pail (`php artisan pail`) — it is installed and configured for dev use.
+
 </laravel-boost-guidelines>
