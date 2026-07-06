@@ -32,16 +32,19 @@ return [
     'routes' => [
         [
             'match' => [
-                // Match only routes whose paths match this pattern (use * as a wildcard to match any characters). Example: 'users/*'.
-                'prefixes' => ['/*'],
-
-                // Match only routes whose domains match this pattern (use * as a wildcard to match any characters). Example: 'api.*'.
-                'domains' => ['*'],
+                // This app has no `/api` URL prefix (apiPrefix is '' in bootstrap/app.php),
+                // and Scribe's prefix matcher runs against $route->uri() verbatim (no leading
+                // slash), so patterns like '/*' never match URIs like 'login' or 'user'.
+                // We select routes by name instead: every API route is namespaced with the
+                // `api.v1.*` segment in routes/api.php, and that pattern matches without
+                // pulling in vendor routes (home, sanctum/csrf-cookie, storage/*, up, docs*).
+                'prefixes' => [],
+                'domains'  => ['*'],
             ],
 
-            // Include these routes even if they did not match the rules above.
+            // Pull in API routes by their namespaced route name.
             'include' => [
-                // 'users.index', 'POST /new', '/auth/*'
+                'api.v1.*',
             ],
 
             // Exclude these routes even if they matched the rules above.
@@ -105,17 +108,17 @@ return [
     // How is your API authenticated? This information will be used in the displayed docs, generated examples and response calls.
     'auth' => [
         // Set this to true if ANY endpoints in your API use authentication.
-        'enabled' => false,
+        'enabled' => true,
 
         // Set this to true if your API should be authenticated by default. If so, you must also set `enabled` (above) to true.
         // You can then use @unauthenticated or @authenticated on individual endpoints to change their status from the default.
-        'default' => false,
+        'default' => true,
 
         // Where is the auth value meant to be sent in a request?
         'in' => AuthIn::BEARER->value,
 
         // The name of the auth parameter (e.g. token, key, apiKey) or header (e.g. Authorization, Api-Key).
-        'name' => 'key',
+        'name' => 'Authorization',
 
         // The value of the parameter to be used by Scribe to authenticate response calls.
         // This will NOT be included in the generated documentation. If empty, Scribe will use a random value.
@@ -220,7 +223,7 @@ return [
             ...Defaults::HEADERS_STRATEGIES,
             Strategies\StaticData::withSettings(data: [
                 'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
+                'Accept'       => 'application/json',
             ]),
         ],
         'urlParameters' => [
