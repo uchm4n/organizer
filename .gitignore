@@ -2,6 +2,7 @@
 /bootstrap/ssr
 /node_modules
 /public/build
+/public/vendor
 /public/fonts-manifest.dev.json
 /public/hot
 /public/storage
@@ -27,3 +28,4 @@ yarn-error.log
 /.vscode
 /.zed
 /.fresh
+/.scribe
