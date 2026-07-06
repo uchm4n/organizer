@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -53,15 +54,27 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->dontReportDuplicates();
 
         // Laravel's exception handler silently skips a list of "internal"
-        // exception types from ever being reported (ValidationException,
-        // AuthorizationException, AuthenticationException,
-        // ModelNotFoundException, etc.). We want our tiered logger to see
-        // the abuse-signal types (403, 422), so we opt them back in. The
-        // tiers we keep silent (401, 404) are silently dropped in our
-        // report callback before any log line is written.
+        // exception types from ever being reported (the $internalDontReport
+        // array in Illuminate\Foundation\Exceptions\Handler). The gate uses
+        // `instanceof`, so any subclass of a listed type is also filtered —
+        // meaning ThrottleRequestsException (extends HttpResponseException)
+        // and abort()-thrown HttpExceptions never reach our report callback
+        // below, and neither does ValidationException.
+        //
+        // `stopIgnoring()` uses an exact class-string match (not instanceof),
+        // so we must list the *parent* class string of each family we want
+        // un-ignored. After un-ignoring, our report callback becomes the
+        // single routing point for every exception tier:
+        //   - 401 / 404 / ModelNotFound / non-throttle HttpResponseException
+        //     -> silent (filtered by ExceptionLogger::isClientNoise())
+        //   - server errors (5xx + non-HTTP Throwables) -> error, always
+        //   - client abuse signals (403, 422, 429) -> warning, always
+        //   - other 4xx -> info (slim line, no stack trace)
         $exceptions->stopIgnoring([
             AuthorizationException::class,
-            // ValidationException::class,
+            HttpException::class,
+            HttpResponseException::class,
+            ValidationException::class,
         ]);
 
         // ---------------- Exception logging ----------------
@@ -97,7 +110,16 @@ return Application::configure(basePath: dirname(__DIR__))
                 return false;
             }
 
-            return null; // fall through to Laravel's default logging
+            // Other 4xx (400, 405, 410, 415, ...) — info level, slim line.
+            // Never fall through to Laravel's default logger: that would dump
+            // a multi-line stack trace and break the slim-line log goal.
+            if ($status >= 400 && $status < 500) {
+                ExceptionLogger::clientInfo($e, $status);
+
+                return false;
+            }
+
+            return null; // safety net — unreachable for normal exception flow
         });
 
         // ---------------- Exception rendering ----------------

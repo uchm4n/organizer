@@ -4,9 +4,12 @@ use App\Models\User;
 use App\Support\ExceptionLogger;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -108,6 +111,43 @@ test('403 authorization exceptions are logged at warning level as api misuse sig
         });
 });
 
+test('422 validation exceptions are logged at warning level as api misuse signals', function () {
+    Log::spy();
+
+    // Login route requires email + password; omitting them triggers 422.
+    $this->postJson(route('api.v1.auth.login'));
+
+    Log::shouldHaveReceived('warning')
+        ->once()
+        ->withArgs(function (string $message, array $context): bool {
+            return str_contains($message, '422 Unprocessable Entity')
+                && str_contains($message, 'ValidationException')
+                && ($context['status'] ?? null) === 422;
+        });
+});
+
+test('429 throttle exceptions are logged at warning level as api misuse signals', function () {
+    Log::spy();
+
+    RateLimiter::shouldReceive('limiter')
+        ->with('api')
+        ->andReturn(fn () => Limit::perMinute(1000)->by('test'));
+    RateLimiter::shouldReceive('tooManyAttempts')->andReturn(true);
+    RateLimiter::shouldReceive('availableIn')->andReturn(47);
+
+    $this->actingAs(User::factory()->create())
+        ->withHeader('X-API-Version', '1')
+        ->getJson(route('api.v1.user.show'));
+
+    Log::shouldHaveReceived('warning')
+        ->once()
+        ->withArgs(function (string $message, array $context): bool {
+            return str_contains($message, '429 Too Many Requests')
+                && str_contains($message, 'ThrottleRequestsException')
+                && ($context['status'] ?? null) === 429;
+        });
+});
+
 test('logged context includes the requesting user id when authenticated', function () {
     Log::spy();
 
@@ -135,7 +175,14 @@ test('exception logger classifies client noise correctly', function () {
         ->and(ExceptionLogger::isClientNoise(new NotFoundHttpException))->toBeTrue()
         ->and(ExceptionLogger::isClientNoise(new RuntimeException))->toBeFalse()
         ->and(ExceptionLogger::isClientNoise(new AuthorizationException))->toBeFalse()
-        ->and(ExceptionLogger::isClientNoise(ValidationException::withMessages(['x' => ['y']])))->toBeFalse();
+        ->and(ExceptionLogger::isClientNoise(ValidationException::withMessages(['x' => ['y']])))->toBeFalse()
+        ->and(ExceptionLogger::isClientNoise(new ThrottleRequestsException))->toBeFalse();
+});
+
+test('exception logger maps throttle exceptions to 429 status', function () {
+    expect(ExceptionLogger::httpStatus(new ThrottleRequestsException))->toBe(429)
+        ->and(ExceptionLogger::httpStatus(ValidationException::withMessages(['x' => ['y']])))->toBe(422)
+        ->and(ExceptionLogger::httpStatus(new AuthorizationException))->toBe(403);
 });
 
 test('trace_id is generated per request and exposed via response header', function () {
