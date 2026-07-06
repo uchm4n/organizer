@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -88,9 +89,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 return false; // we've already written; don't double-log
             }
 
-            // 403 Forbidden and 422 Unprocessable Entity are potential API
+            // 403 Forbidden, 429 and 422 Unprocessable Entity are potential API
             // misuse / brute-force / probing signals — log at warning.
-            if (in_array($status, [403, 422], true)) {
+            if (in_array($status, [403, 422, 429], true)) {
                 ExceptionLogger::clientWarning($e, $status);
 
                 return false;
@@ -141,6 +142,30 @@ return Application::configure(basePath: dirname(__DIR__))
                 title: 'Not Found',
                 detail: 'The requested endpoint does not exist.',
             );
+        });
+
+        $exceptions->render(function (ThrottleRequestsException $e) {
+            $headers = $e->getHeaders();
+            $retryAfter = $headers['Retry-After'] ?? null;
+
+            $response = Problem::response(
+                status: 429,
+                title: 'Too Many Requests',
+                detail: 'You have exceeded the rate limit for this endpoint. Please wait before retrying.',
+                extra: [
+                    'retry_after' => $retryAfter !== null ? (int) $retryAfter : null,
+                    'trace_id' => app()->bound('app.trace_id') ? app('app.trace_id') : null,
+                ],
+            );
+
+            // Re-attach the rate-limit headers (X-RateLimit-Limit/Remaining/Reset and Retry-After).
+            // They live on the exception; returning a fresh JsonResponse would otherwise drop them,
+            // and consumers need them on the 429 just as much as on success responses for backoff logic.
+            foreach ($headers as $key => $value) {
+                $response->headers->set($key, (string) $value);
+            }
+
+            return $response;
         });
 
         $exceptions->render(function (HttpException $e) {

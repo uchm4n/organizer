@@ -6,6 +6,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -49,15 +50,15 @@ final class ExceptionLogger
 
     public static function isClientNoise(Throwable $e): bool
     {
+        if ($e instanceof ThrottleRequestsException) {
+            return false;
+        }
+
         return self::matchesAny($e, self::CLIENT_NOISE);
     }
 
     public static function httpStatus(Throwable $e): int
     {
-        if ($e instanceof HttpException) {
-            return $e->getStatusCode();
-        }
-
         if ($e instanceof ValidationException) {
             return 422;
         }
@@ -72,6 +73,14 @@ final class ExceptionLogger
 
         if ($e instanceof ModelNotFoundException) {
             return 404;
+        }
+
+        if ($e instanceof ThrottleRequestsException) {
+            return 429;
+        }
+
+        if ($e instanceof HttpException) {
+            return $e->getStatusCode();
         }
 
         return 500;
@@ -145,12 +154,6 @@ final class ExceptionLogger
 
     private static function matchesAny(Throwable $e, array $classes): bool
     {
-        foreach ($classes as $class) {
-            if ($e instanceof $class) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($classes, fn ($class) => $e instanceof $class);
     }
 }
