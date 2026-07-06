@@ -148,8 +148,8 @@ Prior tokens for the user are revoked on each login.</p>
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"email\": \"jane@example.com\",
-    \"password\": \"s3cret\"
+    \"email\": \"uchm4n@gmail.com\",
+    \"password\": \"password\"
 }"
 </code></pre></div>
 
@@ -165,8 +165,8 @@ const headers = {
 };
 
 let body = {
-    "email": "jane@example.com",
-    "password": "s3cret"
+    "email": "uchm4n@gmail.com",
+    "password": "password"
 };
 
 fetch(url, {
@@ -291,10 +291,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="email"                data-endpoint="POSTlogin"
-               value="jane@example.com"
+               value="uchm4n@gmail.com"
                data-component="body">
     <br>
-<p>Valid email address. Example: <code>jane@example.com</code></p>
+<p>Valid email address. Example: <code>uchm4n@gmail.com</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>password</code></b>&nbsp;&nbsp;
@@ -303,10 +303,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="password"                data-endpoint="POSTlogin"
-               value="s3cret"
+               value="password"
                data-component="body">
     <br>
-<p>The user's password. Example: <code>s3cret</code></p>
+<p>The user's password. Example: <code>password</code></p>
         </div>
         </form>
 
@@ -363,7 +363,7 @@ fetch(url, {
             </summary>
             <pre><code class="language-http">content-type: application/problem+json
 cache-control: no-cache, private
-x-trace-id: 5885fae5
+x-trace-id: 1fbe3597
  </code></pre></details>         <pre>
 
 <code class="language-json" style="max-height: 300px;">{
@@ -513,7 +513,7 @@ fetch(url, {
             </summary>
             <pre><code class="language-http">content-type: application/problem+json
 cache-control: no-cache, private
-x-trace-id: 7720767d
+x-trace-id: 85810cbf
  </code></pre></details>         <pre>
 
 <code class="language-json" style="max-height: 300px;">{
@@ -670,7 +670,7 @@ fetch(url, {
             </summary>
             <pre><code class="language-http">content-type: application/problem+json
 cache-control: no-cache, private
-x-trace-id: a7c53074
+x-trace-id: 9676e1f3
  </code></pre></details>         <pre>
 
 <code class="language-json" style="max-height: 300px;">{

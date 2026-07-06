@@ -25,8 +25,8 @@ class LoginController extends Controller
      *
      * @unauthenticated
      *
-     * @bodyParam email string required Valid email address. Example: jane@example.com
-     * @bodyParam password string required The user's password. Example: s3cret
+     * @bodyParam email string required Valid email address. Example: uchm4n@gmail.com
+     * @bodyParam password string required The user's password. Example: password
      *
      * @response 200 {
      *   "access_token": "1|abcdef1234567890",
