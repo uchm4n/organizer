@@ -6,7 +6,7 @@ use Laravel\Sanctum\Sanctum;
 
 test('an authenticated user can fetch their current api user payload', function () {
     $user = User::factory()->create([
-        'name' => 'Taylor Otwell',
+        'name'  => 'Taylor Otwell',
         'email' => 'taylor@example.com',
     ]);
 

@@ -13,14 +13,14 @@ test('the application bootstrap is free of inertia web integration', function ()
 });
 
 test('the repository no longer ships node based frontend tooling', function () {
-    $composer = json_decode(file_get_contents(base_path('composer.json')), true, flags: JSON_THROW_ON_ERROR);
-    $lock = json_decode(file_get_contents(base_path('composer.lock')), true, flags: JSON_THROW_ON_ERROR);
-    $boost = json_decode(file_get_contents(base_path('boost.json')), true, flags: JSON_THROW_ON_ERROR);
-    $envExample = file_get_contents(base_path('.env.example'));
+    $composer       = json_decode(file_get_contents(base_path('composer.json')), true, flags: JSON_THROW_ON_ERROR);
+    $lock           = json_decode(file_get_contents(base_path('composer.lock')), true, flags: JSON_THROW_ON_ERROR);
+    $boost          = json_decode(file_get_contents(base_path('boost.json')), true, flags: JSON_THROW_ON_ERROR);
+    $envExample     = file_get_contents(base_path('.env.example'));
     $agentsGuidance = file_get_contents(base_path('AGENTS.md'));
     // $claudeGuidance = file_get_contents(base_path('CLAUDE.md'));
     $testsWorkflow = file_get_contents(base_path('.github/workflows/tests.yml'));
-    $lintWorkflow = file_get_contents(base_path('.github/workflows/lint.yml'));
+    $lintWorkflow  = file_get_contents(base_path('.github/workflows/lint.yml'));
 
     expect(array_key_exists('inertiajs/inertia-laravel', $composer['require']))->toBeFalse();
     expect(array_key_exists('laravel/wayfinder', $composer['require']))->toBeFalse();
@@ -38,7 +38,7 @@ test('the repository no longer ships node based frontend tooling', function () {
 
     expect($envExample)->not->toContain('VITE_APP_NAME');
 
-    foreach ([$agentsGuidance, /*$claudeGuidance*/] as $guidance) {
+    foreach ([$agentsGuidance/* $claudeGuidance */] as $guidance) {
         expect($guidance)
             ->not->toContain('inertiajs/inertia-laravel')
             ->not->toContain('laravel/wayfinder')

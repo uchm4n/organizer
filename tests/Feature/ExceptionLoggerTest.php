@@ -22,12 +22,12 @@ beforeEach(function () {
 function loginTokenForLogging(string $email = 'logger@example.com'): string
 {
     User::factory()->create([
-        'email' => $email,
+        'email'    => $email,
         'password' => Hash::make('secret-password'),
     ]);
 
     return test()->postJson(route('api.v1.auth.login'), [
-        'email' => $email,
+        'email'    => $email,
         'password' => 'secret-password',
     ])->json('access_token');
 }
@@ -214,7 +214,7 @@ test('user supplied trace id is preserved across the request', function () {
         ->withHeaders([
             'Authorization' => 'Bearer '.$token,
             'X-API-Version' => '1',
-            'X-Trace-Id' => 'custom123',
+            'X-Trace-Id'    => 'custom123',
         ])
         ->getJson(route('api.v1.user.index'));
 

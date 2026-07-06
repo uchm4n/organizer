@@ -20,7 +20,7 @@ class LoginController extends Controller
 
         return response()->json([
             'access_token' => $token->plainTextToken,
-            'token_type' => 'Bearer',
+            'token_type'   => 'Bearer',
         ]);
     }
 }

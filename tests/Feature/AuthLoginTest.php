@@ -6,12 +6,12 @@ use Laravel\Sanctum\PersonalAccessToken;
 
 test('a user can login and receive an api token', function () {
     $user = User::factory()->create([
-        'email' => 'taylor@example.com',
+        'email'    => 'taylor@example.com',
         'password' => Hash::make('secret-password'),
     ]);
 
     $response = $this->postJson(route('api.v1.auth.login'), [
-        'email' => 'taylor@example.com',
+        'email'    => 'taylor@example.com',
         'password' => 'secret-password',
     ]);
 
@@ -33,12 +33,12 @@ test('a user can login and receive an api token', function () {
 
 test('a user can authenticate api requests with the issued token', function () {
     User::factory()->create([
-        'email' => 'taylor@example.com',
+        'email'    => 'taylor@example.com',
         'password' => Hash::make('secret-password'),
     ]);
 
     $token = $this->postJson(route('api.v1.auth.login'), [
-        'email' => 'taylor@example.com',
+        'email'    => 'taylor@example.com',
         'password' => 'secret-password',
     ])->json('access_token');
 
@@ -50,12 +50,12 @@ test('a user can authenticate api requests with the issued token', function () {
 
 test('login rejects invalid credentials', function () {
     User::factory()->create([
-        'email' => 'taylor@example.com',
+        'email'    => 'taylor@example.com',
         'password' => Hash::make('secret-password'),
     ]);
 
     $this->postJson(route('api.v1.auth.login'), [
-        'email' => 'taylor@example.com',
+        'email'    => 'taylor@example.com',
         'password' => 'wrong-password',
     ])
         ->assertUnprocessable()

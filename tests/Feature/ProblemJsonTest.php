@@ -43,7 +43,7 @@ test('unknown api endpoints produce a 404 problem document', function () {
 
 test('expired tokens are rejected with a 401 problem document', function () {
     $user = User::factory()->create([
-        'email' => 'taylor@example.com',
+        'email'    => 'taylor@example.com',
         'password' => Hash::make('secret-password'),
     ]);
 
@@ -86,12 +86,12 @@ test('generic exceptions become a 500 problem document with a generic message in
 
 test('requests without an api version header default to the current version', function () {
     User::factory()->create([
-        'email' => 'taylor@example.com',
+        'email'    => 'taylor@example.com',
         'password' => Hash::make('secret-password'),
     ]);
 
     $token = $this->postJson(route('api.v1.auth.login'), [
-        'email' => 'taylor@example.com',
+        'email'    => 'taylor@example.com',
         'password' => 'secret-password',
     ])->json('access_token');
 
@@ -103,13 +103,13 @@ test('requests without an api version header default to the current version', fu
 
 test('requests with a supported api version header are accepted', function () {
     User::factory()->create([
-        'email' => 'taylor@example.com',
+        'email'    => 'taylor@example.com',
         'password' => Hash::make('secret-password'),
     ]);
 
     $token = $this->withHeader('X-API-Version', '1')
         ->postJson(route('api.v1.auth.login'), [
-            'email' => 'taylor@example.com',
+            'email'    => 'taylor@example.com',
             'password' => 'secret-password',
         ])->json('access_token');
 

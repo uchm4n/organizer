@@ -16,8 +16,8 @@ final class HttpSunset
         string $sunsetDate,
     ): Response {
         $deprecationAt = CarbonImmutable::createFromFormat('!Y-m-d', trim($deprecationDate), 'UTC');
-        $sunsetAt = CarbonImmutable::createFromFormat('!Y-m-d', trim($sunsetDate), 'UTC')->endOfDay();
-        $now = CarbonImmutable::now('UTC');
+        $sunsetAt      = CarbonImmutable::createFromFormat('!Y-m-d', trim($sunsetDate), 'UTC')->endOfDay();
+        $now           = CarbonImmutable::now('UTC');
 
         if ($now->greaterThan($sunsetAt)) {
             return response()->noContent(); // or abort(410)

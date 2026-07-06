@@ -6,12 +6,12 @@ use Illuminate\Support\Facades\Hash;
 function loginToken(string $email = 'taylor@example.com', string $password = 'secret-password'): string
 {
     User::factory()->create([
-        'email' => $email,
+        'email'    => $email,
         'password' => Hash::make($password),
     ]);
 
     return test()->postJson(route('api.v1.auth.login'), [
-        'email' => $email,
+        'email'    => $email,
         'password' => $password,
     ])->json('access_token');
 }
@@ -29,9 +29,9 @@ test('v2 clients receive a paginated list of users', function () {
         ->getJson(route('api.v2.user.index'))
         ->assertOk()
         ->assertJsonStructure([
-            'data' => [['id', 'name', 'email']],
+            'data'  => [['id', 'name', 'email']],
             'links' => [['url', 'label', 'active']],
-            'meta' => ['current_page', 'from', 'last_page', 'per_page', 'to', 'total'],
+            'meta'  => ['current_page', 'from', 'last_page', 'per_page', 'to', 'total'],
         ]);
 })->skip('After we add v2 endpoints. This is for reference');
 
@@ -101,7 +101,7 @@ test('pagination respects per_page and navigates across pages', function () {
 
 test('user data in the paginated response matches the userdata shape', function () {
     User::factory()->create([
-        'name' => 'Ada Lovelace',
+        'name'  => 'Ada Lovelace',
         'email' => 'ada@example.com',
     ]);
     $token = loginToken('viewer@example.com');

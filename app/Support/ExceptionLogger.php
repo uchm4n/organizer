@@ -109,11 +109,11 @@ final class ExceptionLogger
     private static function context(Throwable $e, int $status): array
     {
         $context = [
-            'status' => $status,
-            'route' => optional(request()->route())->getName() ?? request()->path(),
-            'method' => request()->method(),
-            'url' => request()->fullUrl(),
-            'ip' => request()->ip(),
+            'status'   => $status,
+            'route'    => optional(request()->route())->getName() ?? request()->path(),
+            'method'   => request()->method(),
+            'url'      => request()->fullUrl(),
+            'ip'       => request()->ip(),
             'trace_id' => self::traceId(),
         ];
 
