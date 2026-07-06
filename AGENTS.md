@@ -252,7 +252,7 @@ API versions are NOT expressed in URLs. The version is selected via the `X-API-V
 
 ## Sanctum Token Expiration
 
-- Global token expiration (minutes) is configured in `config/sanctum.php` via the `expiration` option. Set to `1440` (1 day).
+- Global token expiration (minutes) is configured in `config/sanctum.php` via the `expiration` option. Set to `2880` (2 day).
 - `$user->createToken($name)` (no third arg) inherits the global expiration. Passing a third arg overrides it — avoid unless intentional.
 - On login, prior tokens for the user are revoked: `$user->tokens()->delete()` before `createToken(...)`.
 - Expired tokens return `401 Problem+Json` (no auto-refresh; the client must re-authenticate).
