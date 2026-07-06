@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\ApiVersion;
 use App\Http\Middleware\AssignTraceId;
+use App\Http\Middleware\EnsureRole;
 use App\Http\Middleware\HttpSunset;
 use App\Http\Middleware\RequireApiVersion;
 use App\Support\ExceptionLogger;
@@ -29,8 +30,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'sunset' => HttpSunset::class,
+            'sunset'  => HttpSunset::class,
             'version' => RequireApiVersion::class,
+            'role'    => EnsureRole::class,
         ]);
 
         // Every API request gets a trace_id and declares its version via the
@@ -167,7 +169,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (ThrottleRequestsException $e) {
-            $headers = $e->getHeaders();
+            $headers    = $e->getHeaders();
             $retryAfter = $headers['Retry-After'] ?? null;
 
             $response = Problem::response(
@@ -176,7 +178,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 detail: 'You have exceeded the rate limit for this endpoint. Please wait before retrying.',
                 extra: [
                     'retry_after' => $retryAfter !== null ? (int) $retryAfter : null,
-                    'trace_id' => app()->bound('app.trace_id') ? app('app.trace_id') : null,
+                    'trace_id'    => app()->bound('app.trace_id') ? app('app.trace_id') : null,
                 ],
             );
 
@@ -192,7 +194,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (HttpException $e) {
             $status = $e->getStatusCode();
-            $title = Problem::titleForStatus($status);
+            $title  = Problem::titleForStatus($status);
 
             return Problem::response(
                 status: $status,
@@ -203,7 +205,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (Throwable $e) {
             $status = $e instanceof HttpException ? $e->getStatusCode() : 500;
-            $title = Problem::titleForStatus($status);
+            $title  = Problem::titleForStatus($status);
 
             // Never return HTML for errors. In local/dev, expose diagnostic
             // extension members so debugging remains useful; in production
@@ -215,9 +217,9 @@ return Application::configure(basePath: dirname(__DIR__))
                     detail: $e->getMessage() ?: $title,
                     extra: [
                         'exception' => $e::class,
-                        'file' => $e->getFile(),
-                        'line' => $e->getLine(),
-                        'trace_id' => app()->bound('app.trace_id') ? app('app.trace_id') : null,
+                        'file'      => $e->getFile(),
+                        'line'      => $e->getLine(),
+                        'trace_id'  => app()->bound('app.trace_id') ? app('app.trace_id') : null,
                     ],
                 );
             }
