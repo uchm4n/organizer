@@ -19,7 +19,7 @@ class WorkspaceFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'     => 'Personal',
+            'name'     => 'Workspace',
             'settings' => fake()->boolean(50) ? [] : null,
         ];
     }

@@ -13,4 +13,20 @@ enum ItemType: int
     case Event       = 5;
     case Document    = 6;
     case Custom      = 99;
+
+    /**
+     * Human-readable label suitable for item titles.
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::Note        => self::Note->name,
+            self::Todo        => self::Todo->name,
+            self::Spreadsheet => self::Spreadsheet->name,
+            self::TaxFiling   => self::TaxFiling->name,
+            self::Event       => self::Event->name,
+            self::Document    => self::Document->name,
+            self::Custom      => self::Custom->name,
+        };
+    }
 }

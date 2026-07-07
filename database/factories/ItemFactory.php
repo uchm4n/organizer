@@ -24,16 +24,17 @@ class ItemFactory extends Factory
      */
     public function definition(): array
     {
-        $types = array_filter(
+        $types = array_values(array_filter(
             ItemType::cases(),
             static fn (ItemType $t) => $t !== ItemType::Custom,
-        );
+        ));
+        $type = fake()->randomElement($types);
 
         return [
             'workspace_id' => Workspace::factory(),
             'parent_id'    => null,
-            'type'         => fake()->randomElement($types),
-            'title'        => fake()->words(3, true),
+            'type'         => $type,
+            'title'        => $type->label(),
             'data'         => [],
             'sort_order'   => 0,
         ];
@@ -55,11 +56,16 @@ class ItemFactory extends Factory
      */
     public function childOf(Item $parent, ?ItemType $type = null): static
     {
-        return $this->state(fn (array $attributes) => [
-            'workspace_id' => $parent->workspace_id,
-            'parent_id'    => $parent->id,
-            'type'         => $type ?? $parent->type,
-        ]);
+        return $this->state(function (array $attributes) use ($parent, $type): array {
+            $resolvedType = $type ?? $parent->type;
+
+            return [
+                'workspace_id' => $parent->workspace_id,
+                'parent_id'    => $parent->id,
+                'type'         => $resolvedType,
+                'title'        => $resolvedType->label(),
+            ];
+        });
     }
 
     /**
@@ -67,13 +73,15 @@ class ItemFactory extends Factory
      */
     public function ofType(ItemType $type): static
     {
-        return $this->state(['type' => $type]);
+        return $this->state([
+            'type'  => $type,
+            'title' => $type->label(),
+        ]);
     }
 
     public function note(): static
     {
-        return $this->state([
-            'type' => ItemType::Note,
+        return $this->ofType(ItemType::Note)->state([
             'data' => [
                 'body'   => fake()->paragraph(),
                 'format' => 'markdown',
@@ -85,8 +93,7 @@ class ItemFactory extends Factory
     {
         $priorities = ['low', 'medium', 'high'];
 
-        return $this->state([
-            'type' => ItemType::Todo,
+        return $this->ofType(ItemType::Todo)->state([
             'data' => [
                 'due_at'    => fake()->dateTimeThisMonth()->format('Y-m-d\TH:i:s\Z'),
                 'completed' => fake()->boolean(40),
@@ -107,8 +114,7 @@ class ItemFactory extends Factory
             range(1, 4),
         );
 
-        return $this->state([
-            'type' => ItemType::Spreadsheet,
+        return $this->ofType(ItemType::Spreadsheet)->state([
             'data' => [
                 'columns' => $columns,
                 'rows'    => $rows,
@@ -126,8 +132,7 @@ class ItemFactory extends Factory
             range(1, 3),
         );
 
-        return $this->state([
-            'type' => ItemType::TaxFiling,
+        return $this->ofType(ItemType::TaxFiling)->state([
             'data' => [
                 'year'         => fake()->numberBetween(2018, 2025),
                 'jurisdiction' => fake()->countryCode(),
@@ -140,8 +145,7 @@ class ItemFactory extends Factory
     {
         $starts = Carbon::instance(fake()->dateTimeThisMonth());
 
-        return $this->state([
-            'type' => ItemType::Event,
+        return $this->ofType(ItemType::Event)->state([
             'data' => [
                 'starts_at' => $starts->format('Y-m-d\TH:i:s\Z'),
                 'ends_at'   => $starts->copy()->addHours(2)->format('Y-m-d\TH:i:s\Z'),
@@ -153,8 +157,7 @@ class ItemFactory extends Factory
 
     public function document(): static
     {
-        return $this->state([
-            'type' => ItemType::Document,
+        return $this->ofType(ItemType::Document)->state([
             'data' => [
                 'file_path' => fake()->filePath(),
                 'mime'      => fake()->mimeType(),
@@ -166,8 +169,7 @@ class ItemFactory extends Factory
 
     public function custom(): static
     {
-        return $this->state([
-            'type' => ItemType::Custom,
+        return $this->ofType(ItemType::Custom)->state([
             'data' => [
                 'arbitrary' => fake()->words(3, true),
             ],

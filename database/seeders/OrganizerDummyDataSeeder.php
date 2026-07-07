@@ -2,15 +2,20 @@
 
 namespace Database\Seeders;
 
+use App\Enums\ItemType;
+use App\Enums\Role;
 use App\Models\Item;
 use App\Models\User;
 use App\Models\Workspace;
+use Database\Factories\ItemFactory;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
+use LogicException;
 
 /**
- * Seeds a single demo user with a workspace and a mixed item tree.
+ * Seeds a workspace with a mixed item tree for an existing user or a fallback admin.
  *
  * Opt-in only — NOT called from DatabaseSeeder. Run via:
  *   php artisan db:seed --class=OrganizerDummyDataSeeder
@@ -24,113 +29,77 @@ class OrganizerDummyDataSeeder extends Seeder
      */
     public function run(): void
     {
-        $user = User::factory()->create([
-            'name'     => 'Demo User',
-            'email'    => 'demo@organizer.test',
-            'password' => Hash::make('password'),
-        ]);
+        $user = $this->resolveUser();
 
         $workspace = Workspace::factory()->forUser($user)->create([
             'name' => 'Workspace',
         ]);
 
-        $this->seedNotes($workspace);
-        $this->seedTodos($workspace);
-        $this->seedSpreadsheets($workspace);
-        $this->seedTaxFilings($workspace);
-        $this->seedEvents($workspace);
-        $this->seedDocuments($workspace);
-        $this->seedCustom($workspace);
+        $this->seedType($workspace, ItemType::Note, 3, [0 => 1, 1 => 1]);
+        $this->seedType($workspace, ItemType::Todo, 5, [4 => 3]);
+        $this->seedType($workspace, ItemType::Spreadsheet, 1, [0 => 2]);
+        $this->seedType($workspace, ItemType::TaxFiling, 2);
+        $this->seedType($workspace, ItemType::Event, 3);
+        $this->seedType($workspace, ItemType::Document, 2);
+        $this->seedType($workspace, ItemType::Custom, 2);
     }
 
-    private function seedNotes(Workspace $workspace): void
+    private function resolveUser(): User
     {
-        $roots = Item::factory()
-            ->forWorkspace($workspace)
-            ->note()
-            ->count(3)
-            ->create();
-
-        $roots->take(2)->each(function (Item $note) use ($workspace): void {
-            Item::factory()
-                ->forWorkspace($workspace)
-                ->childOf($note)
-                ->note()
-                ->create([
-                    'title' => 'Sub-note of '.$note->title,
-                ]);
-        });
+        return User::query()->where('role', Role::Admin->value)->first()
+            ?? User::query()->first()
+            ?? User::factory()->admin()->create();
     }
 
-    private function seedTodos(Workspace $workspace): void
-    {
-        Item::factory()
+    /**
+     * @param  array<int, int>  $childrenPerRoot
+     * @return Collection<int, Item>
+     */
+    private function seedType(
+        Workspace $workspace,
+        ItemType $type,
+        int $rootCount,
+        array $childrenPerRoot = [],
+    ): Collection {
+        $roots = $this
+            ->factoryForType($type)
             ->forWorkspace($workspace)
-            ->todo()
-            ->count(4)
+            ->count($rootCount)
+            ->sequence(fn (Sequence $sequence): array => [
+                'title' => $type->label(),
+            ])
             ->create();
 
-        $project = Item::factory()
-            ->forWorkspace($workspace)
-            ->todo()
-            ->create(['title' => 'Project Alpha']);
+        foreach ($childrenPerRoot as $rootIndex => $childCount) {
+            $parent = $roots->get($rootIndex);
 
-        Item::factory()
-            ->forWorkspace($workspace)
-            ->childOf($project)
-            ->todo()
-            ->count(3)
-            ->create();
+            if (! $parent instanceof Item) {
+                throw new LogicException("Unable to seed children for {$type->name} root index {$rootIndex}.");
+            }
+
+            $this
+                ->factoryForType($type)
+                ->childOf($parent, $type)
+                ->count($childCount)
+                ->sequence(fn (Sequence $sequence): array => [
+                    'title' => $type->label(),
+                ])
+                ->create();
+        }
+
+        return $roots;
     }
 
-    private function seedSpreadsheets(Workspace $workspace): void
+    private function factoryForType(ItemType $type): ItemFactory
     {
-        $root = Item::factory()
-            ->forWorkspace($workspace)
-            ->spreadsheet()
-            ->create(['title' => 'Accounts 2026']);
-
-        Item::factory()
-            ->forWorkspace($workspace)
-            ->childOf($root)
-            ->spreadsheet()
-            ->count(2)
-            ->create();
-    }
-
-    private function seedTaxFilings(Workspace $workspace): void
-    {
-        Item::factory()
-            ->forWorkspace($workspace)
-            ->taxFiling()
-            ->count(2)
-            ->create();
-    }
-
-    private function seedEvents(Workspace $workspace): void
-    {
-        Item::factory()
-            ->forWorkspace($workspace)
-            ->event()
-            ->count(3)
-            ->create();
-    }
-
-    private function seedDocuments(Workspace $workspace): void
-    {
-        Item::factory()
-            ->forWorkspace($workspace)
-            ->document()
-            ->count(2)
-            ->create();
-    }
-
-    private function seedCustom(Workspace $workspace): void
-    {
-        Item::factory()
-            ->forWorkspace($workspace)
-            ->custom()
-            ->count(2)
-            ->create();
+        return match ($type) {
+            ItemType::Note        => Item::factory()->note(),
+            ItemType::Todo        => Item::factory()->todo(),
+            ItemType::Spreadsheet => Item::factory()->spreadsheet(),
+            ItemType::TaxFiling   => Item::factory()->taxFiling(),
+            ItemType::Event       => Item::factory()->event(),
+            ItemType::Document    => Item::factory()->document(),
+            ItemType::Custom      => Item::factory()->custom(),
+        };
     }
 }

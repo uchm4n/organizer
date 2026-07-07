@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\ItemType;
+use App\Enums\Role;
 use App\Models\Item;
 use App\Models\User;
 use App\Models\Workspace;
@@ -11,9 +12,9 @@ describe('seeder shape', function () {
         $this->seed(OrganizerDummyDataSeeder::class);
     });
 
-    test('creates exactly one demo user and one workspace 1:1', function (): void {
+    test('creates exactly one fallback admin user and one workspace 1:1', function (): void {
         expect(User::count())->toBe(1)
-            ->and(User::first()->email)->toBe('demo@organizer.test')
+            ->and(User::first()->role)->toBe(Role::Admin)
             ->and(Workspace::count())->toBe(1)
             ->and(Workspace::first()->user_id)->toBe(User::first()->id);
     });
@@ -48,29 +49,33 @@ describe('seeder shape', function () {
         expect($byType->sum())->toBe(Item::count());
     });
 
-    test('sub-notes link to their parents and roots have no parent', function (): void {
-        $rootNotes  = Item::where('type', ItemType::Note)->whereNull('parent_id')->get();
-        $childNotes = Item::where('type', ItemType::Note)->whereNotNull('parent_id')->get();
+    test('sub-notes link to their parents, roots have no parent, and titles come from the enum label', function (): void {
+        $rootNotes  = Item::where('type', ItemType::Note)->whereNull('parent_id')->orderBy('id')->get();
+        $childNotes = Item::where('type', ItemType::Note)->whereNotNull('parent_id')->orderBy('id')->get();
 
         expect($rootNotes)->toHaveCount(3)
+            ->and($rootNotes->pluck('title')->all())->toBe(['Note 1', 'Note 2', 'Note 3'])
             ->and($childNotes)->toHaveCount(2)
-            ->and($childNotes->every(fn (Item $i) => $i->parent_id !== null))->toBeTrue();
+            ->and($childNotes->pluck('title')->all())->toBe(['Note 1.1', 'Note 2.1'])
+            ->and($childNotes->pluck('parent_id')->all())->toBe($rootNotes->take(2)->pluck('id')->all());
     });
 
-    test('Project Alpha todo has exactly 3 children', function (): void {
-        $parent = Item::where('title', 'Project Alpha')->first();
+    test('Todo 5 has exactly 3 todo children with enum-derived titles', function (): void {
+        $parent = Item::where('title', 'Todo 5')->first();
 
         expect($parent)->not->toBeNull()
             ->and($parent->children()->count())->toBe(3)
-            ->and($parent->children->pluck('type'))->each->toBe(ItemType::Todo);
+            ->and($parent->children()->orderBy('id')->pluck('title')->all())->toBe(['Todo 5.1', 'Todo 5.2', 'Todo 5.3'])
+            ->and($parent->children()->orderBy('id')->get()->pluck('type'))->each->toBe(ItemType::Todo);
     });
 
-    test('Accounts 2026 spreadsheet has exactly 2 spreadsheet children', function (): void {
-        $root = Item::where('title', 'Accounts 2026')->first();
+    test('Spreadsheet 1 has exactly 2 spreadsheet children with enum-derived titles', function (): void {
+        $root = Item::where('title', 'Spreadsheet 1')->first();
 
         expect($root)->not->toBeNull()
             ->and($root->children()->count())->toBe(2)
-            ->and($root->children->every(fn (Item $c) => $c->type === ItemType::Spreadsheet))->toBeTrue();
+            ->and($root->children()->orderBy('id')->pluck('title')->all())->toBe(['Spreadsheet 1.1', 'Spreadsheet 1.2'])
+            ->and($root->children()->get()->every(fn (Item $item) => $item->type === ItemType::Spreadsheet))->toBeTrue();
     });
 
     test('items data payloads follow the per-type contract', function (): void {
@@ -85,6 +90,16 @@ describe('seeder shape', function () {
 });
 
 describe('factories in isolation', function () {
+    test('organizer dummy data seeder reuses an existing admin user', function (): void {
+        $admin = User::factory()->admin()->create();
+
+        $this->seed(OrganizerDummyDataSeeder::class);
+
+        expect(User::count())->toBe(1)
+            ->and(Workspace::count())->toBe(1)
+            ->and(Workspace::first()->user_id)->toBe($admin->id);
+    });
+
     test('workspace factory 1:1 binds via forUser state', function (): void {
         $user      = User::factory()->create();
         $workspace = Workspace::factory()->forUser($user)->create();
@@ -111,6 +126,17 @@ describe('factories in isolation', function () {
         $item      = Item::factory()->forWorkspace($workspace)->custom()->make();
 
         expect($item->type)->toBe(ItemType::Custom)
+            ->and($item->title)->toBe(ItemType::Custom->label())
             ->and($item->data)->toHaveKey('arbitrary');
+    });
+
+    test('item factory titles come from the item type enum labels', function (): void {
+        $user      = User::factory()->create();
+        $workspace = Workspace::factory()->forUser($user)->create();
+        $note      = Item::factory()->forWorkspace($workspace)->note()->make();
+        $todo      = Item::factory()->forWorkspace($workspace)->todo()->make();
+
+        expect($note->title)->toBe(ItemType::Note->label())
+            ->and($todo->title)->toBe(ItemType::Todo->label());
     });
 });
