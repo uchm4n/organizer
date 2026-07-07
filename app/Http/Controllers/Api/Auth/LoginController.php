@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Actions\Auth\LoginUserAction;
+use App\Data\Api\Auth\LoginData;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -35,11 +35,11 @@ class LoginController extends Controller
      * @response 422 {"message":"The request data did not pass validation.","errors":{"email":["The email field is required."]}}
      * @response 429 {"message":"Too Many Requests"}
      */
-    public function __invoke(LoginRequest $request): JsonResponse
+    public function __invoke(LoginData $data): JsonResponse
     {
         $token = $this->loginUser->handle(
-            $request->email(),
-            $request->password(),
+            $data->email,
+            $data->password,
         );
 
         return response()->json([

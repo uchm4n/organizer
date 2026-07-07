@@ -5369,7 +5369,7 @@ fetch(url, {
                                                 </summary>
                                                                                                 <pre><code class="language-http">content-type: application/problem+json
 cache-control: no-cache, private
-x-trace-id: 7ce5dcd0</code></pre>
+x-trace-id: 92047211</code></pre>
                                             </details>
                                                                                                                                                                         
                                             <pre><code style="max-height: 300px;"
@@ -5820,7 +5820,7 @@ fetch(url, {
                                                 </summary>
                                                                                                 <pre><code class="language-http">content-type: application/problem+json
 cache-control: no-cache, private
-x-trace-id: 8f14afa1</code></pre>
+x-trace-id: 44808da0</code></pre>
                                             </details>
                                                                                                                                                                         
                                             <pre><code style="max-height: 300px;"
@@ -6306,7 +6306,7 @@ fetch(url, {
                                                 </summary>
                                                                                                 <pre><code class="language-http">content-type: application/problem+json
 cache-control: no-cache, private
-x-trace-id: 3bd83123</code></pre>
+x-trace-id: d4b2b351</code></pre>
                                             </details>
                                                                                                                                                                         
                                             <pre><code style="max-height: 300px;"
@@ -6884,28 +6884,6 @@ fetch(url, {
             </div>
             </div>
 </div>
-                                                                            <div class="sl-flex sl-relative sl-max-w-full sl-py-2 sl-pl-3">
-    <div class="sl-w-1 sl-mt-2 sl-mr-3 sl--ml-3 sl-border-t"></div>
-    <div class="sl-stack sl-stack--vertical sl-stack--1 sl-flex sl-flex-1 sl-flex-col sl-items-stretch sl-max-w-full sl-ml-2 ">
-        <div class="sl-flex sl-items-center sl-max-w-full">
-                                        <div class="sl-flex sl-items-baseline sl-text-base">
-                    <div class="sl-font-mono sl-font-semibold sl-mr-2">user_id</div>
-                                            <span class="sl-truncate sl-text-muted">integer</span>
-                                    </div>
-                                        </div>
-                <div class="sl-prose sl-markdown-viewer" style="font-size: 12px;">
-            <p>optional Filter workspaces by owner user ID.</p>
-        </div>
-                                            <div class="sl-stack sl-stack--horizontal sl-stack--2 sl-flex sl-flex-row sl-items-baseline sl-text-muted">
-                <span>Example:</span> <!-- <span> important for spacing -->
-                <div class="sl-flex sl-flex-1 sl-flex-wrap" style="gap: 4px;">
-                    <div class="sl-max-w-full sl-break-all sl-px-1 sl-bg-canvas-tint sl-text-muted sl-rounded sl-border">
-                        1
-                    </div>
-                </div>
-            </div>
-            </div>
-</div>
                                                                 </div>
                         </div>
                     
@@ -7037,19 +7015,6 @@ fetch(url, {
                                             >
                                                                             </div>
                                 </div>
-                                                                                            <label aria-hidden="true"
-                                       for="queryparam-GETworkspaces-user_id">user_id</label>
-                                <span class="sl-mx-3">:</span>
-                                <div class="sl-flex sl-flex-1">
-                                    <div class="sl-input sl-flex-1 sl-relative">
-                                                                                    <input aria-label="user_id" name="user_id"
-                                                   id="queryparam-GETworkspaces-user_id"
-                                                   placeholder="optional Filter workspaces by owner user ID."
-                                                   value="1" data-component="query"
-                                                   class="sl-relative sl-w-full sl-h-md sl-text-base sl-pr-2.5 sl-pl-2.5 sl-rounded sl-border-transparent hover:sl-border-input focus:sl-border-primary sl-border"
-                                            >
-                                                                            </div>
-                                </div>
                                                     </div>
                     </div>
                 </div>
@@ -7141,7 +7106,7 @@ You can check the Dev Tools console for debugging information.</p>
                                     <div class="sl-px-0 sl-py-1">
                                         <div style="max-height: 400px;" class="sl-overflow-y-auto sl-rounded">
                                             <pre><code class="language-bash">curl --request GET \
-    --get "https://organizer.test/workspaces?per_page=10&amp;user_id=1" \
+    --get "https://organizer.test/workspaces?per_page=10" \
     --header "Authorization: Bearer {YOUR_AUTH_KEY}" \
     --header "Content-Type: application/json" \
     --header "Accept: application/json"</code></pre>                                        </div>
@@ -7157,7 +7122,6 @@ You can check the Dev Tools console for debugging information.</p>
 
 const params = {
     "per_page": "10",
-    "user_id": "1",
 };
 Object.keys(params)
     .forEach(key =&gt; url.searchParams.append(key, params[key]));
@@ -7214,7 +7178,6 @@ fetch(url, {
     &quot;data&quot;: [
         {
             &quot;id&quot;: 1,
-            &quot;user_id&quot;: 1,
             &quot;name&quot;: &quot;Workspace&quot;,
             &quot;settings&quot;: null,
             &quot;created_at&quot;: null,
@@ -8105,7 +8068,7 @@ fetch(url, {
                                                 </summary>
                                                                                                 <pre><code class="language-http">content-type: application/problem+json
 cache-control: no-cache, private
-x-trace-id: 1de4e388</code></pre>
+x-trace-id: dfe1c58a</code></pre>
                                             </details>
                                                                                                                                                                         
                                             <pre><code style="max-height: 300px;"
