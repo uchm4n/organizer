@@ -15,7 +15,7 @@ use Spatie\LaravelData\PaginatedDataCollection;
  */
 final class UserIndexController extends Controller
 {
-    private const int DefaultPerPage = 10;
+    private const int DefaultPerPage = 50;
 
     /**
      * List users (paginated).

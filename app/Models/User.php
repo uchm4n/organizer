@@ -8,6 +8,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -23,6 +24,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read Workspace $workspace
  */
 #[Fillable(['name', 'email', 'password', 'role'])]
 #[Hidden(['password', 'remember_token'])]
@@ -43,6 +45,16 @@ class User extends Authenticatable
             'password'          => 'hashed',
             'role'              => Role::class,
         ];
+    }
+
+    /**
+     * The user's single workspace (1:1).
+     *
+     * @return HasOne<Workspace, $this>
+     */
+    public function workspace(): HasOne
+    {
+        return $this->hasOne(Workspace::class);
     }
 
     /**
