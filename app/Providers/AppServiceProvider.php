@@ -5,6 +5,7 @@ namespace App\Providers;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
@@ -42,7 +43,7 @@ class AppServiceProvider extends ServiceProvider
         );
 
         Password::defaults(fn (): ?Password => app()->isProduction()
-            ? Password::min(12)
+            ? Password::min(8)
                 ->mixedCase()
                 ->letters()
                 ->numbers()
@@ -58,9 +59,11 @@ class AppServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('api', function (Request $request): Limit {
-            return $request->user()
-                ? Limit::perMinute(10000)->by($request->user()->getAuthIdentifier())
-                : Limit::perMinute(60)->by($request->ip());
+            if (! $request->user()) {
+                return Limit::perMinute(60)->by($request->ip());
+            }
+
+            return Limit::perMinute(10000)->by($request->user()->getAuthIdentifier());
         });
     }
 }
