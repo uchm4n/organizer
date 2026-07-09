@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\ClearsResponseCache;
 use Database\Factories\WorkspaceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
@@ -25,7 +26,7 @@ use Illuminate\Support\Carbon;
 class Workspace extends Model
 {
     /** @use HasFactory<WorkspaceFactory> */
-    use HasFactory;
+    use ClearsResponseCache, HasFactory;
 
     /**
      * Get the user that owns this workspace (1:1).
@@ -57,5 +58,18 @@ class Workspace extends Model
         return [
             'settings' => 'array',
         ];
+    }
+
+    /**
+     * Workspace mutations also invalidate item responses: items live under
+     * /workspaces/{workspace}/items and a deleted workspace cascades to its
+     * items in the DB, so cached item responses must die together with the
+     * workspace's own cached responses.
+     *
+     * @return list<string>
+     */
+    protected function responseCacheTagsFor(string $event): array
+    {
+        return ['workspaces', 'items'];
     }
 }

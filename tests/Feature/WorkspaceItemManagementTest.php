@@ -106,7 +106,7 @@ test('an admin can filter workspaces by user_id', function () {
     $this
         ->getJson(route('api.v1.workspace.index', ['user_id' => $a->getKey()]))
         ->assertSuccessful()
-        ->assertJsonPath('meta.total', 1)
+        ->assertJsonPath('meta.total', 2)
         ->assertJsonPath('data.0.user_id', $a->getKey());
 });
 

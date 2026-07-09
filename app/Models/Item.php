@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ItemType;
+use App\Traits\ClearsResponseCache;
 use Database\Factories\ItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
@@ -32,7 +33,7 @@ use Illuminate\Support\Carbon;
 class Item extends Model
 {
     /** @use HasFactory<ItemFactory> */
-    use HasFactory, SoftDeletes;
+    use ClearsResponseCache, HasFactory, SoftDeletes;
 
     /**
      * Get the workspace that owns this item.
@@ -75,5 +76,16 @@ class Item extends Model
             'type' => ItemType::class,
             'data' => 'array',
         ];
+    }
+
+    /**
+     * Any mutation to an item (create / update / soft-delete /
+     * force-delete / restore) invalidates cached item responses.
+     *
+     * @return list<string>
+     */
+    protected function responseCacheTagsFor(string $event): array
+    {
+        return ['items'];
     }
 }

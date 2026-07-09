@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\Role;
+use App\Traits\ClearsResponseCache;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -31,7 +32,7 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use ClearsResponseCache, HasApiTokens, HasFactory, Notifiable;
 
     /**
      * Get the attributes that should be cast.
@@ -63,5 +64,25 @@ class User extends Authenticatable
     public function hasRole(Role ...$roles): bool
     {
         return in_array($this->role, $roles, true);
+    }
+
+    /**
+     * On any user mutation, clear cached user responses. A role change is
+     * additionally treated as a global invalidation: DefaultHasher keys cached
+     * responses per user id, not per role, so a privileged /items response
+     * cached while the user was admin would otherwise survive a downgrade
+     * until natural expiry. Flushing items+workspaces avoids that leak.
+     *
+     * @return list<string>
+     */
+    protected function responseCacheTagsFor(string $event): array
+    {
+        $tags = ['users'];
+
+        if ($this->wasChanged('role')) {
+            $tags = [...$tags, 'items', 'workspaces'];
+        }
+
+        return $tags;
     }
 }
