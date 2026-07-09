@@ -618,7 +618,7 @@
 
         </div>
         <div class="sl-flex sl-items-center sl-px-4 sl-py-3 sl-border-t">
-            Last updated: July 7, 2026
+            Last updated: July 9, 2026
         </div>
 
         <div class="sl-flex sl-items-center sl-px-4 sl-py-3 sl-border-t">
@@ -5369,7 +5369,7 @@ fetch(url, {
                                                 </summary>
                                                                                                 <pre><code class="language-http">content-type: application/problem+json
 cache-control: no-cache, private
-x-trace-id: 92047211</code></pre>
+x-trace-id: d1e71d60</code></pre>
                                             </details>
                                                                                                                                                                         
                                             <pre><code style="max-height: 300px;"
@@ -5820,7 +5820,7 @@ fetch(url, {
                                                 </summary>
                                                                                                 <pre><code class="language-http">content-type: application/problem+json
 cache-control: no-cache, private
-x-trace-id: 44808da0</code></pre>
+x-trace-id: c7de2aff</code></pre>
                                             </details>
                                                                                                                                                                         
                                             <pre><code style="max-height: 300px;"
@@ -6306,7 +6306,7 @@ fetch(url, {
                                                 </summary>
                                                                                                 <pre><code class="language-http">content-type: application/problem+json
 cache-control: no-cache, private
-x-trace-id: d4b2b351</code></pre>
+x-trace-id: 880d1c8b</code></pre>
                                             </details>
                                                                                                                                                                         
                                             <pre><code style="max-height: 300px;"
@@ -8068,7 +8068,7 @@ fetch(url, {
                                                 </summary>
                                                                                                 <pre><code class="language-http">content-type: application/problem+json
 cache-control: no-cache, private
-x-trace-id: dfe1c58a</code></pre>
+x-trace-id: 63a5d161</code></pre>
                                             </details>
                                                                                                                                                                         
                                             <pre><code style="max-height: 300px;"
