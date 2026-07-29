@@ -47,6 +47,19 @@ return [
             'report'     => false,
         ],
 
+        'downloads' => [
+            'driver'             => 'local',
+            'root'               => storage_path('downloads'),
+            'throw'              => true,
+            'report'             => false,
+            'allowed_extensions' => [
+                'pdf', 'txt', 'csv', 'json', 'xml',
+                'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg',
+                'zip', 'tar', 'gz', 'dmg', 'exe', 'deb', 'lef', 'dat', 'bin',
+                'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+            ],
+        ],
+
         's3' => [
             'driver'                  => 's3',
             'key'                     => env('AWS_ACCESS_KEY_ID'),

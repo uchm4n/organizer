@@ -12,7 +12,7 @@
 /resources/js/wayfinder
 /storage/*.key
 /storage/pail
-/storage/downloads
+/storage/downloads/*
 /vendor
 .env
 .env.backup

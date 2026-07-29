@@ -1,16 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Download\ShowDownloadController;
 
 Route::view('/', 'welcome')->name('home');
 
-// downloads
-Route::get('/downloads/{filename}', function ($filename) {
-    $path = storage_path('downloads/'.$filename);
-
-    if (! file_exists($path)) {
-        abort(404);
-    }
-
-    return response()->download($path);
-})->name('downloads');
+Route::get('/downloads/{filename}', ShowDownloadController::class)
+    ->name('downloads')
+    ->middleware('throttle:60,1');
