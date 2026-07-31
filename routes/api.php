@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\Workspace\WorkspaceItemsIndexController;
 use App\Http\Controllers\Api\Workspace\WorkspaceShowController;
 use App\Http\Controllers\Api\Workspace\WorkspaceStoreController;
 use App\Http\Controllers\Api\Workspace\WorkspaceUpdateController;
+use App\Http\Controllers\Download\StatsDownloadController;
 use Illuminate\Support\Facades\Route;
 use Spatie\ResponseCache\Middlewares\FlexibleCacheResponse;
 
@@ -56,6 +57,7 @@ Route::as('api.v1.')
                 Route::patch('/users/{user}/role', UserRoleUpdateController::class)->name('user.role.update')->middleware('throttle:5,1');
                 Route::get('/workspaces', WorkspaceIndexController::class)->name('workspace.index')->middleware($cache(['workspaces']));
                 Route::post('/workspaces', WorkspaceGeneralStoreController::class)->name('workspace.general.store')->middleware('throttle:5,1');
+                Route::get('/download-stats', StatsDownloadController::class)->name('download-stats.index');
             });
 
             // Workspace — own (authenticated users)
